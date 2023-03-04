@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>Alfredo Pérez</name>
+		<email>index@tfwno.gf</email>
+	</maintainer>
+	<upstream>
+		<bugs-to>https://gitlab.freedesktop.org/pipewire/helvum/-/issues</bugs-to>
+	</upstream>
+</pkgmetadata>
