@@ -1,0 +1,25 @@
+--- fritzing-app-29c2cede3a0475ed770db1ee502fdebf6bf3a23d--orig/sketches/index.xml	2022-05-14 09:09:06.000000000 +0200
++++ fritzing-app-29c2cede3a0475ed770db1ee502fdebf6bf3a23d--patched/sketches/index.xml	2022-07-08 16:32:16.324479094 +0200
+@@ -180,12 +180,8 @@
+ 		<sketch id="Synthesizer" >
+ 			<language country="en" name="Synthesizer" src="core/Fritzing Creator Kit DE+EN/creator-kit-en/Fritzing/Synthesizer.fzz"/>
+ 			<language country="de" name="Synthesizer" src="core/Fritzing Creator Kit DE+EN/creator-kit-de/Fritzing/Synthesizer.fzz"/>
+ 		</sketch>
+-		<sketch id="TwitterSaurus" >
+-			<language country="en" name="Twittersaurus" src="core/Fritzing Creator Kit DE+EN/creator-kit-en/Fritzing/TwitterSaurus.fzz"/>
+-			<language country="de" name="Twittersaurus" src="core/Fritzing Creator Kit DE+EN/creator-kit-de/Fritzing/TwitterSaurus.fzz"/>
+-		</sketch>
+ 		<sketch id="Amplification" >
+ 			<language country="en" name="Amplification" src="core/Fritzing Creator Kit DE+EN/creator-kit-en/Fritzing/Amplification.fzz"/>
+ 			<language country="de" name="Verstaerkung" src="core/Fritzing Creator Kit DE+EN/creator-kit-de/Fritzing/Verstaerkung.fzz"/>
+ 		</sketch>
+@@ -429,9 +425,8 @@
+ 			<sketch id="Potentiometer"/>
+ 			<sketch id="Processing_RGB"/>
+ 			<sketch id="Servo"/>
+ 			<sketch id="Synthesizer"/>
+-			<sketch id="TwitterSaurus"/>
+ 			<separator />
+ 			<url>
+ 				<language country="en" name="Get your own Fritzing Creator Kit" href="https://fritzing.org/link/fritzingcreatorkit" />
+ 				<language country="de" name="Erhalten Sie Ihr eigenes Fritzing Creator Kit" href="https://fritzing.org/link/fritzingcreatorkit" />
