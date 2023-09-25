@@ -8,7 +8,7 @@ inherit go-module
 DESCRIPTION="Environment variable manager for shell"
 HOMEPAGE="https://github.com/direnv/direnv"
 SRC_URI="https://github.com/direnv/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
-    https://github.com/index-0/go-vendor/releases/download/direnv-2.32.2/direnv-2.32.2-vendor.tar.xz"
+    https://github.com/index-0/go-vendor/releases/download/direnv-${PV}/direnv-${PV}-vendor.tar.xz"
 LICENSE="MIT"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
