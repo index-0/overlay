@@ -5,10 +5,10 @@ EAPI=7
 
 inherit qmake-utils xdg
 
-APP_COMMIT="29c2cede3a0475ed770db1ee502fdebf6bf3a23d"
+APP_COMMIT="7b75a63c264b31b9ed69481f1f2c84c53f940e03"
 
 PARTS_P="${PN}-parts-${PV}"
-PARTS_COMMIT="c53679d107bbcff09f925fdadfa37b109034b742"
+PARTS_COMMIT="e270ebfd8ee7dd40a6ef29ad0d3dba006e9eee61"
 
 DESCRIPTION="Electronic Design Automation"
 HOMEPAGE="https://fritzing.org/
@@ -44,9 +44,10 @@ S="${WORKDIR}/${PN}-app-${APP_COMMIT}"
 DOCS=( README.md )
 
 PATCHES=(
-	"${FILESDIR}/${PN}-0.9.10-unbundle-quazip.patch"
-	"${FILESDIR}/${PN}-0.9.10-remove-twitter4j.patch"
-	"${FILESDIR}/${PN}-0.9.10-move-parts-db-path.patch"
+	"${FILESDIR}/${PN}-${PV}-disable-autoupdate.patch"
+	"${FILESDIR}/${PN}-${PV}-unbundle-quazip.patch"
+	"${FILESDIR}/${PN}-${PV}-remove-twitter4j.patch"
+	"${FILESDIR}/${PN}-${PV}-move-parts-db-path.patch"
 )
 
 src_prepare() {

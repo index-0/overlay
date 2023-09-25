@@ -1,0 +1,22 @@
+diff --git a/src/fapplication.cpp b/src/fapplication.cpp
+index 2dc61f3..588ec89 100644
+--- a/src/fapplication.cpp
++++ b/src/fapplication.cpp
+@@ -751,7 +751,7 @@ bool FApplication::loadReferenceModel(const QString & databaseName, bool fullLoa
+ bool FApplication::loadReferenceModel(const QString &  databaseName, bool fullLoad, ReferenceModel * referenceModel)
+ {
+ 	QDir dir = FolderUtils::getAppPartsSubFolder("");
+-	QString dbPath = dir.absoluteFilePath("parts.db");
++	QString dbPath = FolderUtils::getTopLevelDocumentsPath() + "/parts.db";
+ 
+ 	QFileInfo info(dbPath);
+ 	bool dbExists = (info.size() > 0) && !fullLoad;
+@@ -1969,7 +1969,7 @@ void FApplication::regeneratePartsDatabase() {
+ void FApplication::regeneratePartsDatabaseAux(QDialog * progressDialog) {
+ 	ReferenceModel * referenceModel = new CurrentReferenceModel();
+ 	QDir dir = FolderUtils::getAppPartsSubFolder("");
+-	QString dbPath = dir.absoluteFilePath("parts.db");
++	QString dbPath = FolderUtils::getTopLevelDocumentsPath() + "/parts.db";
+ 	auto *thread = new RegenerateDatabaseThread(dbPath, progressDialog, referenceModel);
+ 	connect(thread, SIGNAL(finished()), this, SLOT(regenerateDatabaseFinished()));
+ 	FMessageBox::BlockMessages = true;

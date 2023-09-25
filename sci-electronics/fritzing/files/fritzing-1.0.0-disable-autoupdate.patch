@@ -1,0 +1,307 @@
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/phoenix.pro fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/phoenix.pro
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/phoenix.pro	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/phoenix.pro	2023-06-29 17:09:34.083090716 +0200
+@@ -170,10 +170,9 @@
+ RC_FILE = fritzing.rc
+ RESOURCES += phoenixresources.qrc
+ 
+ # Disable this if you have (and want) libgit2 dynamically
+-LIBGIT_STATIC = true
+-include(pri/libgit2detect.pri)
++LIBGIT_STATIC = false
+ include(pri/boostdetect.pri)
+ include(pri/spicedetect.pri)
+ include(pri/quazipdetect.pri)
+ include(pri/kitchensink.pri)
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/pri/version.pri fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/pri/version.pri
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/pri/version.pri	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/pri/version.pri	2023-06-29 17:13:36.111265019 +0200
+@@ -16,18 +16,12 @@
+ include(gitversion.pri)
+ 
+ HEADERS += \
+ 	src/version/modfiledialog.h \
+-	src/version/updatedialog.h \
+ 	src/version/version.h \
+-	src/version/versionchecker.h \
+-	src/version/partschecker.h
+ 
+ SOURCES += \
+ 	src/version/modfiledialog.cpp \
+-	src/version/updatedialog.cpp \
+ 	src/version/version.cpp \
+-	src/version/versionchecker.cpp \
+-	src/version/partschecker.cpp
+ 
+ FORMS += \
+ 	src/version/modfiledialog.ui
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/fapplication.cpp fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/fapplication.cpp
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/fapplication.cpp	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/fapplication.cpp	2023-06-29 17:16:40.717923453 +0200
+@@ -25,10 +25,8 @@
+ #include "fsplashscreen.h"
+ #include "version/version.h"
+ #include "dialogs/prefsdialog.h"
+ #include "fsvgrenderer.h"
+-#include "version/versionchecker.h"
+-#include "version/updatedialog.h"
+ #include "itemdrag.h"
+ #include "items/wire.h"
+ #include "partsbinpalette/binmanager/binmanager.h"
+ #include "help/tipsandtricks.h"
+@@ -60,9 +58,8 @@
+ #include "sketch/sketchwidget.h"
+ #include "sketch/pcbsketchwidget.h"
+ #include "help/firsttimehelpdialog.h"
+ #include "help/aboutbox.h"
+-#include "version/partschecker.h"
+ 
+ // dependency injection :P
+ #include "referencemodel/sqlitereferencemodel.h"
+ #define CurrentReferenceModel SqliteReferenceModel
+@@ -579,12 +576,8 @@
+ 	cleanupBackups();
+ 
+ 	clearModels();
+ 
+-	if (m_updateDialog) {
+-		delete m_updateDialog;
+-	}
+-
+ 	FSvgRenderer::cleanup();
+ 	ViewLayer::cleanup();
+ 	ViewLayer::cleanup();
+ 	ItemBase::cleanup();
+@@ -755,21 +748,8 @@
+ 
+ 	QFileInfo info(dbPath);
+ 	bool dbExists = (info.size() > 0) && !fullLoad;
+ 
+-	QString sha;
+-	if (!dbExists) {
+-		// fullLoad == true means we are creating the parts database
+-		// so get the sha for last commit of the parts folder and store it in the database
+-		// this sha will be used to determine whether the user's parts folder can be updated from the remote repo
+-		sha = PartsChecker::getSha(dir.absolutePath());
+-		if (sha.isEmpty()) {
+-			DebugDialog::debug(QString("1.6 SHA empty"));
+-			return false;
+-		}
+-		referenceModel->setSha(sha);
+-	}
+-
+ 	// loads local parts, resource parts, and any other parts in files not in the db--these part override db parts with the same moduleID
+ 	QString db = databaseName;
+ 	if (databaseName.isEmpty() && !dbExists) {
+ 		db = dbPath;
+@@ -1184,14 +1164,8 @@
+ 
+ 	splash.hide();
+ 	m_splash = nullptr;
+ 
+-	m_updateDialog = new UpdateDialog();
+-	m_updateDialog->setRepoPath(FolderUtils::getAppPartsSubFolderPath(""), m_referenceModel->sha());
+-	connect(m_updateDialog, SIGNAL(enableAgainSignal(bool)), this, SLOT(enableCheckUpdates(bool)));
+-	connect(m_updateDialog, SIGNAL(installNewParts()), this, SLOT(installNewParts()));
+-	checkForUpdates(false);
+-
+ 	return 0;
+ }
+ 
+ void FApplication::registerFont(const QString &fontFile, bool reallyRegister) {
+@@ -1366,58 +1340,8 @@
+ 	ViewLayer::ViewID viewID;
+ 	ViewLayer::ViewLayerID viewLayerID;
+ };
+ 
+-
+-void FApplication::checkForUpdates() {
+-	checkForUpdates(true);
+-}
+-
+-void FApplication::checkForUpdates(bool atUserRequest)
+-{
+-	enableCheckUpdates(false);
+-
+-	auto * versionChecker = new VersionChecker();
+-
+-	QSettings settings;
+-	if (!atUserRequest) {
+-		// if I've already been notified about these updates, don't bug me again
+-		QString lastMainVersionChecked = settings.value("lastMainVersionChecked").toString();
+-		if (!lastMainVersionChecked.isEmpty()) {
+-			versionChecker->ignore(lastMainVersionChecked, false);
+-		}
+-		QString lastInterimVersionChecked = settings.value("lastInterimVersionChecked").toString();
+-		if (!lastInterimVersionChecked.isEmpty()) {
+-			versionChecker->ignore(lastInterimVersionChecked, true);
+-		}
+-	}
+-
+-	QString atom = QString("http%3://fritzing.org/download/feed/atom/%1/%2")
+-	               .arg(PLATFORM_NAME)
+-				   .arg(Version::makeRequestParamsString(true))
+-				   .arg(QSslSocket::supportsSsl() ? "s" : "");
+-	DebugDialog::debug(atom);
+-	versionChecker->setUrl(atom);
+-	m_updateDialog->setAtUserRequest(atUserRequest);
+-	m_updateDialog->setVersionChecker(versionChecker);
+-
+-	if (atUserRequest) {
+-		m_updateDialog->exec();
+-	}
+-}
+-
+-void FApplication::enableCheckUpdates(bool enabled)
+-{
+-	//DebugDialog::debug("before enable check updates");
+-	Q_FOREACH (QWidget *widget, QApplication::topLevelWidgets()) {
+-		auto *mainWindow = qobject_cast<MainWindow *>(widget);
+-		if (mainWindow) {
+-			mainWindow->enableCheckUpdates(enabled);
+-		}
+-	}
+-	//DebugDialog::debug("after enable check updates");
+-}
+-
+ void FApplication::createUserDataStoreFolderStructures() {
+ 	FolderUtils::createUserDataStoreFolders();
+ 	FolderUtils::copyBin(BinManager::MyPartsBinLocation, BinManager::MyPartsBinTemplateLocation);
+ 	FolderUtils::copyBin(BinManager::SearchBinLocation, BinManager::SearchBinTemplateLocation);
+@@ -1980,12 +1904,9 @@
+ 	auto * thread = qobject_cast<RegenerateDatabaseThread *>(sender());
+ 	if (thread == nullptr) return;
+ 
+ 	QDialog * progressDialog = thread->progressDialog();
+-	if (progressDialog == m_updateDialog) {
+-		m_updateDialog->installFinished(thread->error());
+-	}
+-	else {
++	{
+ 		if (thread->error().isEmpty()) {
+ 			QTimer::singleShot(50, Qt::PreciseTimer, this, SLOT(quit()));
+ 		}
+ 		else {
+@@ -2000,8 +1921,4 @@
+ 	}
+ 
+ 	thread->deleteLater();
+ }
+-
+-void FApplication::installNewParts() {
+-	regeneratePartsDatabaseAux(m_updateDialog);
+-}
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/fapplication.h fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/fapplication.h
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/fapplication.h	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/fapplication.h	2023-06-29 16:53:44.761485976 +0200
+@@ -130,11 +130,8 @@
+ 
+ public Q_SLOTS:
+ 	void preferences();
+ 	void preferencesAfter();
+-	void checkForUpdates();
+-	void checkForUpdates(bool atUserRequest);
+-	void enableCheckUpdates(bool enabled);
+ 	void createUserDataStoreFolderStructures();
+ 	void changeActivation(bool activate, QWidget * originator);
+ 	void updateActivation();
+ 	void topLevelWidgetDestroyed(QObject *);
+@@ -145,9 +142,8 @@
+ 	void newConnection(qintptr socketDescriptor);
+ 	void doCommand(const QString & command, const QString & params, QString & result, int & status);
+ 	void regeneratePartsDatabase();
+ 	void regenerateDatabaseFinished();
+-	void installNewParts();
+ 
+ 
+ protected:
+ 	bool eventFilter(QObject *obj, QEvent *event);
+@@ -206,9 +202,8 @@
+ 	bool m_started = false;
+ 	QStringList m_filesToLoad;
+ 	QString m_libPath;
+ 	QString m_translationPath;
+-	class UpdateDialog * m_updateDialog = nullptr;
+ 	QTimer m_activationTimer;
+ 	QPointer<class FritzingWindow> m_lastTopmostWindow;
+ 	QList<QWidget *> m_orderedTopLevelWidgets;
+ 	QStringList m_arguments;
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow.cpp fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow.cpp
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow.cpp	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow.cpp	2023-06-29 16:57:00.385274906 +0200
+@@ -323,9 +323,8 @@
+ 	m_programView = m_programWindow = nullptr;
+ 	m_welcomeView = nullptr;
+ 	m_windowMenuSeparator = nullptr;
+ 	m_schematicWireColorMenu = m_breadboardWireColorMenu = nullptr;
+-	m_checkForUpdatesAct = nullptr;
+ 	m_fileProgressDialog = nullptr;
+ 	m_currentGraphicsView = nullptr;
+ 	m_comboboxChanged = false;
+ 
+@@ -2231,15 +2230,8 @@
+ 	}
+ 	FritzingWindow::resizeEvent(event);
+ }
+ 
+-void MainWindow::enableCheckUpdates(bool enabled)
+-{
+-	if (m_checkForUpdatesAct != nullptr) {
+-		m_checkForUpdatesAct->setEnabled(enabled);
+-	}
+-}
+-
+ void MainWindow::swapSelectedDelay(const QString & family, const QString & prop, QMap<QString, QString> & currPropsMap, ItemBase * itemBase)
+ {
+ 	//DebugDialog::debug("swap selected delay");
+ 	m_swapTimer.stop();
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow.h fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow.h
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow.h	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow.h	2023-06-29 16:56:16.501873593 +0200
+@@ -176,9 +176,8 @@
+ 	void notClosableForAWhile();
+ 	QAction *raiseWindowAction();
+ 	QSizeGrip *sizeGrip();
+ 	QStatusBar *realStatusBar();
+-	void enableCheckUpdates(bool enabled);
+ 
+ 	void getPartsEditorNewAnd(ItemBase * fromItem);
+ 	void addDefaultParts();
+ 	void init(ReferenceModel *referenceModel, bool lockFiles);
+@@ -900,9 +899,8 @@
+ 	QAction *m_openHelpAct = nullptr;
+ 	QAction *m_examplesAct = nullptr;
+ 	QAction *m_partsRefAct = nullptr;
+ 	QAction *m_visitFritzingDotOrgAct = nullptr;
+-	QAction *m_checkForUpdatesAct = nullptr;
+ 	QAction *m_aboutQtAct = nullptr;
+ 	QAction *m_reportBugAct = nullptr;
+ 	QAction *m_enableDebugAct = nullptr;
+ 	QAction *m_partsEditorHelpAct = nullptr;
+diff -r -U4 fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow_menu.cpp fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow_menu.cpp
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/src/mainwindow/mainwindow_menu.cpp	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/src/mainwindow/mainwindow_menu.cpp	2023-06-29 16:57:38.404622564 +0200
+@@ -1260,12 +1260,8 @@
+ 	m_visitFritzingDotOrgAct = new QAction(tr("Visit fritzing.org"), this);
+ 	m_visitFritzingDotOrgAct->setStatusTip(tr("fritzing.org"));
+ 	connect(m_visitFritzingDotOrgAct, SIGNAL(triggered(bool)), this, SLOT(visitFritzingDotOrg()));
+ 
+-	m_checkForUpdatesAct = new QAction(tr("Check for updates..."), this);
+-	m_checkForUpdatesAct->setStatusTip(tr("Check whether a newer version of Fritzing is available for download"));
+-	connect(m_checkForUpdatesAct, SIGNAL(triggered()), QApplication::instance(), SLOT(checkForUpdates()));
+-
+ 	m_aboutAct = new QAction(tr("&About"), this);
+ 	m_aboutAct->setStatusTip(tr("Show the application's about box"));
+ 	connect(m_aboutAct, SIGNAL(triggered()), this, SLOT(about()));
+ 	m_aboutAct->setMenuRole(QAction::AboutRole);
+@@ -1609,10 +1605,8 @@
+ 	m_helpMenu->addAction(m_partsRefAct);
+ 	m_helpMenu->addSeparator();
+ 	m_helpMenu->addAction(m_partsEditorHelpAct);
+ 	m_helpMenu->addSeparator();
+-	m_helpMenu->addAction(m_checkForUpdatesAct);
+-	m_helpMenu->addSeparator();
+ 	m_helpMenu->addAction(m_reportBugAct);
+ 	m_helpMenu->addAction(m_enableDebugAct);
+ 	m_helpMenu->addSeparator();
+ 	m_helpMenu->addAction(m_aboutAct);

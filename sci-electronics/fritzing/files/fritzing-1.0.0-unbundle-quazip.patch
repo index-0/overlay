@@ -1,6 +1,6 @@
---- fritzing-app-29c2cede3a0475ed770db1ee502fdebf6bf3a23d--orig/pri/quazipdetect.pri	2022-05-14 09:09:06.000000000 +0200
-+++ fritzing-app-29c2cede3a0475ed770db1ee502fdebf6bf3a23d--patched/pri/quazipdetect.pri	2022-07-08 16:48:54.588739847 +0200
-@@ -1,59 +1,7 @@
+--- fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--orig/pri/quazipdetect.pri	2023-04-25 08:22:20.000000000 +0200
++++ fritzing-app-7b75a63c264b31b9ed69481f1f2c84c53f940e03--patched/pri/quazipdetect.pri	2023-06-29 17:14:36.287805614 +0200
+@@ -1,59 +1,6 @@
  # Copyright (c) 2021 Fritzing GmbH
  
 -message("Using fritzing quazip detect script.")
@@ -8,8 +8,8 @@
 -SOURCES += \
 -    src/zlibdummy.c \
 -
--exists($$absolute_path($$PWD/../../quazip_qt5)) {
--        QUAZIPPATH = $$absolute_path($$PWD/../../quazip_qt5)
+-exists($$absolute_path($$PWD/../../quazip_qt$$QT_MAJOR_VERSION)) {
+-        QUAZIPPATH = $$absolute_path($$PWD/../../quazip_qt$$QT_MAJOR_VERSION)
 -        message("found quazip in $${QUAZIPPATH}")
 -    } else {
 -        error("quazip could not be found.")
@@ -18,18 +18,18 @@
 -message("including $$absolute_path($${QUAZIPPATH}/include/quazip)")
 -
  unix:!macx {
-     message("including quazip library on linux")
+-    message("including quazip library on linux")
 -    INCLUDEPATH += $$absolute_path($${QUAZIPPATH}/include/quazip)
--    LIBS += -L$$absolute_path($${QUAZIPPATH}/lib) -lquazip1-qt5
+-    LIBS += -L$$absolute_path($${QUAZIPPATH}/lib) -lquazip1-qt$$QT_MAJOR_VERSION
 -    QMAKE_RPATHDIR += $$absolute_path($${QUAZIPPATH}/lib)
-+    CONFIG += link_pkgconfig
-+    PKGCONFIG += quazip1-qt5
++	CONFIG += link_pkgconfig
++	PKGCONFIG += quazip1-qt5
  }
 -
 -macx {
 -    message("including quazip library on mac os")
 -    INCLUDEPATH += $$absolute_path($${QUAZIPPATH}/include/quazip)
--    LIBS += -L$$absolute_path($${QUAZIPPATH}/lib) -lquazip1-qt5
+-    LIBS += -L$$absolute_path($${QUAZIPPATH}/lib) -lquazip1-qt$$QT_MAJOR_VERSION
 -    QMAKE_RPATHDIR += $$absolute_path($${QUAZIPPATH}/lib)
 -    LIBS += -lz
 -}
@@ -54,12 +54,12 @@
 -        QUAZIPLIB = $$absolute_path($$QUAZIPPATH/build32/Release)
 -    }
 -
--    exists($$QUAZIPLIB/quazip1-qt5.lib) {
+-    exists($$QUAZIPLIB/quazip1-qt*) {
 -        message("found quazip library in $$QUAZIPLIB")
 -    } else {
 -        error("quazip library not found in $$QUAZIPLIB")
 -    }
 -
--    LIBS += -L$$QUAZIPLIB -lquazip1-qt5
+-    LIBS += -L$$QUAZIPLIB -lquazip1-qt$$QT_MAJOR_VERSION
 -}
 \ No newline at end of file
