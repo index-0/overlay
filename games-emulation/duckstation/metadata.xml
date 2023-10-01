@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<maintainer type="project">
+	<email>index@tfwno.gf</email>
+	<name>Alfredo Pérez</name>
+</maintainer>
+<use>
+	<flag name="cubeb">Enable cubeb support</flag>
+	<flag name="discord">Enable Discord RPC support</flag>
+	<flag name="egl">Enable EGL platform support</flag>
+	<flag name="fbdev">Enable Linux FBDev support</flag>
+	<flag name="gbm">Enable support for the Generic Buffer Manager</flag>
+	<flag name="retroachievements">Enable support for RetroAchievements</flag>
+</use>
+</pkgmetadata>
