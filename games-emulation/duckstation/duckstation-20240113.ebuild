@@ -5,7 +5,7 @@ inherit xdg cmake desktop
 DESCRIPTION="Fast PlayStation 1 emulator for x86-64/AArch32/AArch64"
 HOMEPAGE="https://github.com/stenzek/duckstation"
 
-COMMIT="39e62ae948d7b123ec9a60e7cea71243b030e85a"
+COMMIT="572ea80e50f83b81328b7fc1b70d71fb6a74cd90"
 SRC_URI="https://github.com/stenzek/duckstation/archive/${COMMIT}.tar.gz -> ${P}.tar.gz"
 
 KEYWORDS="~amd64"
